@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مغامرة الفاعل والمفعول به | رحلة أبطال القواعد</title>
+    <!-- خط تجوال العربي -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <!-- مكتبة Tailwind CSS للتصميم المتجاوب والتنسيق العصري -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary: #ff5e57;
+            --secondary: #0be881;
+            --accent: #ffd32a;
+            --blue: #0fbcf9;
+            --purple: #8854d0;
+            --dark: #1e272e;
+            --card-bg: rgba(255, 255, 255, 0.95);
+        }
+        * {
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #a8ff78 0%, #78ffd6 100%),
+                        radial-gradient(circle at 10% 20%, rgba(255, 222, 89, 0.4) 0%, transparent 40%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: var(--dark);
+        }
+        canvas#confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 99999;
+        }
+        /* بطاقات الشرح والتمرين */
+        .glass-panel {
+            background: var(--card-bg);
+            border-radius: 28px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+        }
+        .rule-card {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+        }
+        .rule-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        .word-card {
+            background: white;
+            border: 3px solid #eef1f6;
+            border-radius: 22px;
+            padding: 20px;
+            transition: all 0.35s ease;
+            position: relative;
+        }
+        .word-card:hover {
+            border-color: #d1d8e0;
+            transform: translateY(-3px);
+        }
+        .word-card.success {
+            border-color: var(--secondary) !important;
+            background: #f0fff4 !important;
+            pointer-events: none;
+            animation: bounceIn 0.5s ease;
+        }
+        .word-card.error {
+            animation: shakeCard 0.45s ease-in-out;
+            border-color: var(--primary) !important;
+            background: #fff5f5;
+        }
+        .interactive-tag {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .interactive-tag:hover {
+            transform: scale(1.08);
+        }
+        @keyframes shakeCard {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+        }
+        .pulse-slow {
+            animation: pulseGlow 3s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="p-3 md:p-8 flex flex-col items-center">
+
+    <!-- قماش المفرقعات الاحتفالية -->
+    <canvas id="confetti"></canvas>
+
+    <!-- نافذة تسجيل اسم الطالب (Modal) -->
+    <div id="nameModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 transition-all duration-300">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl border-4 border-amber-300 transform transition-all scale-100 animate-[bounceIn_0.4s_ease]">
+            <div class="text-6xl mb-3 animate-bounce">🎓</div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-800 mb-2">مرحباً يا بطل القواعد!</h2>
+            <p class="text-gray-600 mb-6 text-sm sm:text-base font-medium">استعد لرحلة اكتشاف الفاعل والمفعول به وحصد النجوم الذهبية ⭐</p>
+            
+            <div class="mb-5 text-right">
+                <label for="studentNameInput" class="block text-sm font-bold text-gray-700 mb-2">اكتب اسمك للمشاركة في لوحة الأبطال:</label>
+                <input type="text" id="studentNameInput" placeholder="مثال: يوسف أحمد / سارة محمد" 
+                       class="w-full px-5 py-3.5 text-center text-lg font-bold rounded-2xl border-2 border-emerald-300 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-100 transition-all bg-emerald-50/30">
+                <p id="nameInputError" class="text-red-500 text-xs mt-1.5 hidden font-bold">⚠️ يُرجى كتابة اسمك أولاً للانطلاق!</p>
+            </div>
+
+            <button onclick="startGame()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-extrabold text-xl py-4 rounded-2xl shadow-lg shadow-emerald-500/30 active:scale-95 transition-all">
+                انطلاق في المغامرة 🚀
+            </button>
+        </div>
+    </div>
+
+    <!-- نافذة الاحتفال النهائي عند اكتمال التحدي -->
+    <div id="winModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-10 max-w-lg w-full text-center shadow-2xl border-4 border-amber-400 relative">
+            <div class="text-7xl mb-4">🏆</div>
+            <h2 class="text-3xl font-black text-amber-500 mb-2">إنجاز رائع ومتميز!</h2>
+            <p class="text-gray-700 text-lg mb-4 font-bold" id="winStudentName">أحسنت يا بطل!</p>
+            <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 mb-6 text-right space-y-2 text-sm sm:text-base">
+                <p class="text-gray-700 font-semibold">🌟 النتيجة النهائية: <span class="font-extrabold text-emerald-600" id="winScore">12 من 12</span></p>
+                <p class="text-gray-700 font-semibold">🎯 عدد المحاولات غير الصحيحة: <span class="font-extrabold text-red-500" id="winMistakes">0</span></p>
+                <p class="text-gray-700 font-semibold">🎖️ التقدير: <span class="font-extrabold text-purple-600">فارس إعراب الجملة الفعلية!</span></p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button onclick="restartGame()" class="flex-1 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white font-extrabold py-3.5 px-6 rounded-2xl shadow-md transition-all active:scale-95">
+                    إعادة التحدي 🔄
+                </button>
+                <button onclick="closeWinModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3.5 px-6 rounded-2xl transition-all">
+                    إغلاق ومراجعة الشرح 📚
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- الحاوية الأساسية للتطبيق -->
+    <main class="w-full max-w-5xl glass-panel p-5 sm:p-10 relative z-10 my-4">
+        
+        <!-- الشريط العلوي: شارة التلميذ واللوحة الإحصائية -->
+        <header class="flex flex-col md:flex-row items-center justify-between gap-4 pb-6 border-b-2 border-gray-100 mb-8">
+            <div class="flex items-center gap-3">
+                <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl font-black shadow-inner">
+                    📖
+                </div>
+                <div>
+                    <div id="studentBadge" class="inline-block bg-slate-100 text-slate-700 text-xs sm:text-sm font-bold px-3 py-1 rounded-full mb-1">
+                        المشارك: في انتظار التسجيل... 👤
+                    </div>
+                    <h1 class="text-2xl sm:text-4xl font-black text-gray-800 tracking-tight">
+                        أبطال <span class="text-emerald-500">الفاعل</span> و <span class="text-purple-600">المفعول به</span>
+                    </h1>
+                </div>
+            </div>
+
+            <!-- لوحة النجوم -->
+            <div class="flex items-center gap-4 bg-amber-50 border-2 border-amber-300 px-6 py-2.5 rounded-3xl shadow-sm">
+                <span class="text-3xl">⭐</span>
+                <div class="text-right">
+                    <p class="text-xs text-amber-700 font-bold">النجوم المكتسبة</p>
+                    <p id="scoreDisplay" class="text-2xl font-black text-amber-600">0 / 12</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- ============================================== -->
+        <!-- 1) القسم التعليمي: الشرح التفاعلي والأمثلة البصرية -->
+        <!-- ============================================== -->
+        <section class="mb-12">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl sm:text-2xl font-black text-gray-800 flex items-center gap-2">
+                    <span>💡</span> المعمل التعليمي: تعلّم السر الذكي قبل الاختبار
+                </h2>
+                <span class="text-xs sm:text-sm font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg">شرح مبسّط وممتع</span>
+            </div>
+
+            <!-- شبكة بطاقات الشرح -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- بطاقة شرح الفاعل -->
+                <div class="rule-card bg-gradient-to-br from-emerald-50/80 to-teal-50/50 p-6 rounded-3xl border-2 border-emerald-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="bg-emerald-500 text-white text-xs font-black px-3.5 py-1.5 rounded-xl shadow-sm">الركن الأول</span>
+                        <span class="text-3xl">👑</span>
+                    </div>
+                    <h3 class="text-2xl font-black text-emerald-700 mb-2">ما هو الفاعل؟</h3>
+                    <p class="text-gray-700 font-medium mb-3 leading-relaxed">
+                        هو اسمٌ يدل على <strong class="text-emerald-800">مَن قام بالفعل</strong> أو اتّصف به، وحُكمه دائماً: <span class="text-emerald-700 font-extrabold bg-emerald-100/70 px-2 py-0.5 rounded-md">مرفوع</span> (وعلامته الأصلية: <strong>الضمة ُ</strong>).
+                    </p>
+                    
+                    <div class="bg-white p-3.5 rounded-2xl border border-emerald-100 mb-4 shadow-xs">
+                        <span class="text-xs font-bold text-gray-500 block mb-1">🔑 السؤال السحري لكشف الفاعل:</span>
+                        <div class="font-extrabold text-emerald-600 text-lg">نطرح السؤال: « مَنْ فَعَلَ؟ »</div>
+                    </div>
+
+                    <!-- نموذج تفاعلي لمثال الفاعل -->
+                    <div class="bg-white/90 p-4 rounded-2xl border-2 border-dashed border-emerald-300 text-center">
+                        <span class="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full inline-block mb-2">مثال نموذجي</span>
+                        <div class="text-xl sm:text-2xl font-black text-gray-800 mb-2 tracking-wide">
+                            قَرَأَ <span class="text-emerald-600 underline decoration-wavy decoration-emerald-400">التِّلْمِيذُ</span> القِصَّةَ
+                        </div>
+                        <p class="text-xs sm:text-sm text-gray-600 font-semibold">
+                            مَن قرأ؟ ⬅️ <span class="font-black text-emerald-700">التِّلْمِيذُ</span> (فاعل مرفوع وعلامة رفعه الضمة الظاهرة).
+                        </p>
+                    </div>
+                </div>
+
+                <!-- بطاقة شرح المفعول به -->
+                <div class="rule-card bg-gradient-to-br from-purple-50/80 to-fuchsia-50/50 p-6 rounded-3xl border-2 border-purple-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="bg-purple-600 text-white text-xs font-black px-3.5 py-1.5 rounded-xl shadow-sm">الركن الثاني</span>
+                        <span class="text-3xl">🎯</span>
+                    </div>
+                    <h3 class="text-2xl font-black text-purple-700 mb-2">ما هو المفعول به؟</h3>
+                    <p class="text-gray-700 font-medium mb-3 leading-relaxed">
+                        هو اسمٌ يدل على <strong class="text-purple-800">مَن وقع عليه فعل الفاعل</strong>، وحُكمه دائماً: <span class="text-purple-700 font-extrabold bg-purple-100/70 px-2 py-0.5 rounded-md">منصوب</span> (وعلامته الأصلية: <strong>الفتحة َ</strong>).
+                    </p>
+                    
+                    <div class="bg-white p-3.5 rounded-2xl border border-purple-100 mb-4 shadow-xs">
+                        <span class="text-xs font-bold text-gray-500 block mb-1">🔑 السؤال السحري لكشف المفعول به:</span>
+                        <div class="font-extrabold text-purple-600 text-lg">نطرح السؤال: « مَاذَا فَعَلَ الفَاعِلُ؟ »</div>
+                    </div>
+
+                    <!-- نموذج تفاعلي لمثال المفعول به -->
+                    <div class="bg-white/90 p-4 rounded-2xl border-2 border-dashed border-purple-300 text-center">
+                        <span class="text-xs font-bold text-purple-800 bg-purple-100 px-3 py-1 rounded-full inline-block mb-2">مثال نموذجي</span>
+                        <div class="text-xl sm:text-2xl font-black text-gray-800 mb-2 tracking-wide">
+                            شَرِبَ الطِّفْلُ <span class="text-purple-600 underline decoration-wavy decoration-purple-400">الحَلِيبَ</span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-gray-600 font-semibold">
+                            ماذا شرب الطفل؟ ⬅️ <span class="font-black text-purple-700">الحَلِيبَ</span> (مفعول به منصوب وعلامة نصبه الفتحة).
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- بطاقة خلاصة المعادلة النحوية -->
+            <div class="mt-6 bg-gradient-to-r from-amber-100 via-orange-50 to-amber-100 p-4 sm:p-5 rounded-2xl border border-amber-300 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">⚖️</span>
+                    <div>
+                        <h4 class="font-extrabold text-gray-800 text-base sm:text-lg">معادلة الجملة الفعلية الذهبية:</h4>
+                        <p class="text-gray-600 text-xs sm:text-sm">فِعْل (حَدَث) ➕ فَاعِل [مَنْ؟ - مَرْفُوع بالضّمة] ➕ مَفْعُول بِه [مَاذَا؟ - مَنْصُوب بالفتحة]</p>
+                    </div>
+                </div>
+                <a href="#quizSection" class="inline-flex items-center gap-2 bg-gray-900 text-white font-extrabold text-sm px-5 py-2.5 rounded-xl hover:bg-gray-800 transition-all active:scale-95 shadow-md">
+                    <span>انتقل للاختبار</span> ⬇️
+                </a>
+            </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- 2) الاختبار التفاعلي: قسم الفاعل وقسم المفعول به -->
+        <!-- ============================================== -->
+        <section id="quizSection" class="space-y-12">
+            
+            <!-- الجزء الأول: صائد الفاعل -->
+            <div class="bg-emerald-50/40 rounded-3xl p-5 sm:p-8 border-2 border-emerald-200">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+                    <div>
+                        <div class="inline-flex items-center gap-2 bg-emerald-500 text-white font-black text-sm sm:text-base px-4 py-1.5 rounded-2xl shadow-sm mb-1">
+                            <span>🏹 الجزء الأول</span>
+                            <span>|</span>
+                            <span>صَائِدُ الفَاعِل</span>
+                        </div>
+                        <p class="text-gray-600 text-sm font-semibold">اقرأ الجملة بتركيز، ثم اكتب الفاعل فقط في الصندوق:</p>
+                    </div>
+                    <span class="text-xs bg-white text-emerald-800 border border-emerald-300 px-3 py-1.5 rounded-xl font-extrabold">
+                        اسأل نفسك: مَن قام بهذا الفعل؟ 🤔
+                    </span>
+                </div>
+
+                <!-- شبكة أسئلة الفاعل (6 أسئلة) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" id="gridPart1">
+                    <!-- سيتم حقن البطاقات ديناميكياً بواسطة JavaScript -->
+                </div>
+            </div>
+
+            <!-- الجزء الثاني: كاشف المفعول به -->
+            <div class="bg-purple-50/40 rounded-3xl p-5 sm:p-8 border-2 border-purple-200">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+                    <div>
+                        <div class="inline-flex items-center gap-2 bg-purple-600 text-white font-black text-sm sm:text-base px-4 py-1.5 rounded-2xl shadow-sm mb-1">
+                            <span>🔍 الجزء الثاني</span>
+                            <span>|</span>
+                            <span>كَاشِفُ المَفْعُولِ بِهِ</span>
+                        </div>
+                        <p class="text-gray-600 text-sm font-semibold">اقرأ الجملة بتركيز، ثم استخرج المفعول به فقط:</p>
+                    </div>
+                    <span class="text-xs bg-white text-purple-800 border border-purple-300 px-3 py-1.5 rounded-xl font-extrabold">
+                        اسأل نفسك: ماذا وقع عليه الفعل؟ 🎯
+                    </span>
+                </div>
+
+                <!-- شبكة أسئلة المفعول به (6 أسئلة) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" id="gridPart2">
+                    <!-- سيتم حقن البطاقات ديناميكياً بواسطة JavaScript -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- التذييل ولوحة الإعادة -->
+        <footer class="mt-12 pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs sm:text-sm text-gray-500 font-bold">
+            <p>🌟 درس الفاعل والمفعول به - تطبيق تفاعلي معتمد لتعليم قواعد اللغة العربية للأطفال</p>
+            <div class="flex items-center gap-2">
+                <button onclick="resetInputsConfirm()" class="text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-xl transition-all">
+                    تصفير الإجابات 🔄
+                </button>
+            </div>
+        </footer>
+
+    </main>
+
+    <!-- نظام التنبيه الصغير البديل لـ alert() -->
+    <div id="toastNotification" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm font-bold px-6 py-3 rounded-2xl shadow-2xl opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center gap-2">
+        <span id="toastIcon">✨</span>
+        <span id="toastMessage">إشعار</span>
+    </div>
+
+    <!-- كود الجافاسكريبت التشغيلي والمنطقي -->
+    <script>
+        /**
+         * 1) بيانات الأسئلة
+         * كل عنصر يحتوي على الجملة، والخيارات المقبولة كإجابة صحيحة، وأيقونة دلالية، والتلميح
+         */
+        const part1Data = [
+            {
+                id: 1,
+                sentence: "حَفِظَ الطَّالِبُ القُرْآنَ الكَرِيمَ",
+                targetType: "الفاعل",
+                answers: ["الطالب", "طالب", "الطالبُ"],
+                icon: "📖",
+                hint: "مَن الذي حَفِظَ؟"
+            },
+            {
+                id: 2,
+                sentence: "يَبْنِي المُهَنْدِسُ البُرْجَ العَالِيَ",
+                targetType: "الفاعل",
+                answers: ["المهندس", "مهندس", "المهندسُ"],
+                icon: "🏗️",
+                hint: "مَن الذي يَبْنِي؟"
+            },
+            {
+                id: 3,
+                sentence: "طَبَخَتِ الأُمُّ طَعَاماً لَذِيذاً",
+                targetType: "الفاعل",
+                answers: ["الأم", "الام", "أم", "ام", "الأمُّ"],
+                icon: "🍲",
+                hint: "مَن التي طَبَخَت؟"
+            },
+            {
+                id: 4,
+                sentence: "غَرَّدَ العُصْفُورُ فَوْقَ الغُصْنِ",
+                targetType: "الفاعل",
+                answers: ["العصفور", "عصفور", "العصفورُ"],
+                icon: "🐦",
+                hint: "مَن الذي غَرَّد؟"
+            },
+            {
+                id: 5,
+                sentence: "عَالَجَ الطَّبِيبُ المَرِيضَ بِعِنَايَةٍ",
+                targetType: "الفاعل",
+                answers: ["الطبيب", "طبيب", "الطبيبُ"],
+                icon: "🩺",
+                hint: "مَن الذي عَالَج؟"
+            },
+            {
+                id: 6,
+                sentence: "رَكِبَ الفَارِسُ الحِصَانَ السَّرِيعَ",
+                targetType: "الفاعل",
+                answers: ["الفارس", "فارس", "الفارسُ"],
+                icon: "🐎",
+                hint: "مَن الذي رَكِبَ؟"
+            }
+        ];
+
+        const part2Data = [
+            {
+                id: 7,
+                sentence: "شَرِبَ المَرِيضُ الدَّوَاءَ صَبَاحاً",
+                targetType: "المفعول به",
+                answers: ["الدواء", "دواء", "الدواءَ"],
+                icon: "💊",
+                hint: "ماذا شرب المريض؟"
+            },
+            {
+                id: 8,
+                sentence: "فَتَحَ الحَارِسُ البَابَ بِسُرْعَةٍ",
+                targetType: "المفعول به",
+                answers: ["الباب", "باب", "البابَ"],
+                icon: "🚪",
+                hint: "ماذا فتح الحارس؟"
+            },
+            {
+                id: 9,
+                sentence: "أَكَلَ الأَرْنَبُ الجَزَرَةَ الطَّازَجَةَ",
+                targetType: "المفعول به",
+                answers: ["الجزرة", "جزرة", "الجزره", "جزره", "الجزرةَ"],
+                icon: "🥕",
+                hint: "ماذا أكل الأرنب؟"
+            },
+            {
+                id: 10,
+                sentence: "قَطَفَتْ مَرْيَمُ الزَّهْرَةَ الجَمِيلَةَ",
+                targetType: "المفعول به",
+                answers: ["الزهرة", "زهرة", "الزهره", "زهره", "الزهرةَ"],
+                icon: "🌸",
+                hint: "ماذا قطفت مريم؟"
+            },
+            {
+                id: 11,
+                sentence: "اشْتَرَى أَبِي سَيَّارَةً جَدِيدَةً",
+                targetType: "المفعول به",
+                answers: ["سيارة", "سياره", "السيارة", "السياره", "سيارةً"],
+                icon: "🚗",
+                hint: "ماذا اشترى أبي؟"
+            },
+            {
+                id: 12,
+                sentence: "كَتَبَ الشَّاعِرُ قَصِيدَةً رَائِعَةً",
+                targetType: "المفعول به",
+                answers: ["قصيدة", "قصيده", "القصيدة", "القصيده", "قصيدةً"],
+                icon: "📜",
+                hint: "ماذا كتب الشاعر؟"
+            }
+        ];
+
+        const allQuestions = [...part1Data, ...part2Data];
+        const totalCount = allQuestions.length;
+
+        let studentName = "";
+        let score = 0;
+        let mistakes = 0;
+        const channel = new BroadcastChannel('grammar_results_channel');
+
+        /**
+         * دالة تطبيع وتنظيف النصوص العربية
+         * تزيل الحركات والتشكيل وتوحّد الهمزات والتاء المربوطة لمرونة الإجابة
+         */
+        function normalizeArabic(text) {
+            if (!text) return "";
+            return text
+                .toString()
+                .trim()
+                // إزالة التشكيل والتنوين والشدة
+                .replace(/[\u064B-\u065F\u0670]/g, '')
+                // توحيد الألفات (أ، إ، آ -> ا)
+                .replace(/[أإآ]/g, 'ا')
+                // توحيد التاء المربوطة والهاء في النهاية
+                .replace(/ة/g, 'ه')
+                // إزالة المسافات المتكررة
+                .replace(/\s+/g, ' ');
+        }
+
+        // بدء اللعبة وحفظ اسم التلميذ
+        function startGame() {
+            const input = document.getElementById('studentNameInput');
+            const errorMsg = document.getElementById('nameInputError');
+            const enteredName = input.value.trim();
+
+            if (!enteredName) {
+                errorMsg.classList.remove('hidden');
+                input.focus();
+                return;
+            }
+
+            errorMsg.classList.add('hidden');
+            studentName = enteredName;
+            document.getElementById('studentBadge').innerHTML = `المشارك: <span class="text-emerald-700 font-black">${studentName}</span> 🌟`;
+            document.getElementById('nameModal').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('nameModal').style.display = 'none';
+            }, 300);
+
+            showToast(`أهلاً بك يا ${studentName}! ابدأ بالتحدي واجمع 12 نجمة ⭐`, '👋');
+        }
+
+        // إنشاء محرك الصوتيات Web Audio API بدون ملفات خارجية
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playSound(type) {
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'win') {
+                    // نغمة نجاح ثلاثية مبهجة
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+                    osc.start(now);
+                    osc.stop(now + 0.45);
+                } else if (type === 'error') {
+                    // نغمة خطأ ناعمة
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.setValueAtTime(160, now + 0.1);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'fanfare') {
+                    // نغمة فوز نهائي أطول
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, now + idx * 0.12);
+                        g.gain.setValueAtTime(0.15, now + idx * 0.12);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.5);
+                        o.start(now + idx * 0.12);
+                        o.stop(now + idx * 0.12 + 0.5);
+                    });
+                }
+            } catch (e) {
+                // تجاهل أخطاء المتصفحات إن وجدت
+            }
+        }
+
+        // رسم البطاقات في واجهة الاختبار
+        function renderCards(list, containerId, themeColor) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = "";
+
+            list.forEach((item) => {
+                const card = document.createElement('div');
+                card.className = 'word-card flex flex-col justify-between';
+                card.id = `card-${item.id}`;
+
+                const borderBtnClass = themeColor === 'emerald' 
+                    ? 'bg-emerald-500 hover:bg-emerald-600 focus:ring-emerald-300' 
+                    : 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-300';
+
+                const targetBadge = themeColor === 'emerald'
+                    ? '<span class="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">المطلوب: الفاعل</span>'
+                    : '<span class="text-xs font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md">المطلوب: المفعول به</span>';
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-2xl">${item.icon}</span>
+                            ${targetBadge}
+                        </div>
+                        <div class="bg-slate-50 border border-slate-100 p-3 rounded-xl mb-3 text-center">
+                            <p class="font-extrabold text-gray-800 text-base sm:text-lg leading-relaxed select-all">
+                                ${item.sentence}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 mt-2">
+                        <div class="relative">
+                            <input type="text" id="input-${item.id}" 
+                                   placeholder="${item.hint}" 
+                                   class="w-full px-4 py-2.5 text-center text-base font-bold rounded-xl border-2 border-gray-200 focus:border-${themeColor}-500 focus:ring-2 focus:ring-${themeColor}-100 focus:outline-none transition-all"
+                                   autocomplete="off">
+                            <span id="feedback-icon-${item.id}" class="absolute left-3 top-3 hidden text-lg">✅</span>
+                        </div>
+                        <button onclick="checkAnswer(${item.id})" 
+                                id="btn-${item.id}"
+                                class="w-full text-white font-extrabold py-2.5 rounded-xl shadow transition-all active:scale-95 text-sm sm:text-base ${borderBtnClass}">
+                            تحقق من الإجابة ✔️
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+
+                // دعم الإدخال عبر زر Enter
+                const inputEl = card.querySelector(`#input-${item.id}`);
+                inputEl.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') checkAnswer(item.id);
+                });
+            });
+        }
+
+        // بناء بطاقات القسمين
+        renderCards(part1Data, 'gridPart1', 'emerald');
+        renderCards(part2Data, 'gridPart2', 'purple');
+
+        // التحقق من صحة الإجابة
+        function checkAnswer(id) {
+            const inputEl = document.getElementById(`input-${id}`);
+            const cardEl = document.getElementById(`card-${id}`);
+            const btnEl = document.getElementById(`btn-${id}`);
+            const feedbackIcon = document.getElementById(`feedback-icon-${id}`);
+            const data = allQuestions.find(q => q.id === id);
+
+            if (!studentName) {
+                document.getElementById('nameModal').style.display = 'flex';
+                document.getElementById('nameModal').style.opacity = '1';
+                return;
+            }
+
+            const rawInput = inputEl.value;
+            const userNormalized = normalizeArabic(rawInput);
+
+            if (!userNormalized) {
+                showToast("اكتب الكلمة أولاً داخل المربع!", "✏️");
+                inputEl.focus();
+                return;
+            }
+
+            // فحص الإجابة بمقارنة النص الأصلي والمنظف مع كل البدائل الممكنة
+            const isCorrect = data.answers.some(ans => {
+                const normAns = normalizeArabic(ans);
+                // تطابق تام أو تطابق بعد إزالة "الـ" التعريفية لتسهيل الإجابة على التلميذ
+                const withoutAlUser = userNormalized.replace(/^ال/, '');
+                const withoutAlAns = normAns.replace(/^ال/, '');
+                return userNormalized === normAns || withoutAlUser === withoutAlAns;
+            });
+
+            if (isCorrect) {
+                // إجابة صحيحة
+                cardEl.classList.remove('error');
+                cardEl.classList.add('success');
+                inputEl.disabled = true;
+                btnEl.style.display = 'none';
+                if (feedbackIcon) feedbackIcon.classList.remove('hidden');
+
+                score++;
+                document.getElementById('scoreDisplay').innerText = `${score} / ${totalCount}`;
+                playSound('win');
+                fireConfetti(false);
+
+                // إشعار مشجع
+                const cheers = ["إجابة رائعة! ⭐", "بطل حقيقي! 🎯", "ممتاز جداً! 👏", "إعراب ذكي ومتقن! 🌟"];
+                const randomCheer = cheers[Math.floor(Math.random() * cheers.length)];
+                showToast(randomCheer, "🎉");
+
+                // التحقق من إكمال كل الأسئلة
+                if (score === totalCount) {
+                    playSound('fanfare');
+                    saveAndSendResult();
+                    setTimeout(() => {
+                        openWinModal();
+                        fireConfetti(true);
+                    }, 600);
+                }
+            } else {
+                // إجابة خاطئة
+                mistakes++;
+                cardEl.classList.remove('error');
+                void cardEl.offsetWidth; // إعادة تشغيل الأنيميشن
+                cardEl.classList.add('error');
+                playSound('error');
+                showToast(`حاول ثانية يا ${studentName}! ركّز في السؤال: ${data.hint}`, "💡");
+                inputEl.focus();
+                inputEl.select();
+            }
+        }
+
+        // نافذة الفوز النهائية
+        function openWinModal() {
+            document.getElementById('winStudentName').innerText = `ألف مبارك للبطل المتميز: ${studentName}! 🌟`;
+            document.getElementById('winScore').innerText = `${score} من أصل ${totalCount}`;
+            document.getElementById('winMistakes').innerText = `${mistakes} محاولة`;
+            const modal = document.getElementById('winModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeWinModal() {
+            const modal = document.getElementById('winModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function restartGame() {
+            closeWinModal();
+            resetInputs();
+        }
+
+        function resetInputsConfirm() {
+            resetInputs();
+            showToast("تمت إعادة تصفير الإجابات بنجاح!", "🔄");
+        }
+
+        function resetInputs() {
+            score = 0;
+            mistakes = 0;
+            document.getElementById('scoreDisplay').innerText = `0 / ${totalCount}`;
+            renderCards(part1Data, 'gridPart1', 'emerald');
+            renderCards(part2Data, 'gridPart2', 'purple');
+        }
+
+        // نظام الرسائل المنبثقة الخفيفة (Toast)
+        let toastTimeout = null;
+        function showToast(message, icon = "✨") {
+            const toast = document.getElementById('toastNotification');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMessage.innerText = message;
+            toastIcon.innerText = icon;
+
+            toast.style.opacity = '1';
+            toast.style.transform = 'translate(-50%, -10px)';
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, 0)';
+            }, 3000);
+        }
+
+        // حفظ النتائج وإرسالها عبر قناة الاتصال للمعلمين
+        function saveAndSendResult() {
+            const payload = {
+                id: Date.now(),
+                subject: 'الفاعل والمفعول به',
+                name: studentName,
+                score: score,
+                total: totalCount,
+                mistakes: mistakes,
+                time: new Date().toLocaleTimeString('ar-EG'),
+                date: new Date().toLocaleDateString('ar-EG')
+            };
+
+            try {
+                let allResults = JSON.parse(localStorage.getItem('arabic_grammar_results') || '[]');
+                allResults.unshift(payload);
+                localStorage.setItem('arabic_grammar_results', JSON.stringify(allResults));
+                channel.postMessage({ type: 'GRAMMAR_RESULT_SAVED', data: payload });
+            } catch (err) {
+                console.error("Local storage error:", err);
+            }
+        }
+
+        // ==============================================
+        // نظام المفرقعات والاحتفال التفاعلي (Confetti)
+        // ==============================================
+        const canvas = document.getElementById('confetti');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function fireConfetti(massive = false) {
+            const count = massive ? 160 : 45;
+            const colors = ['#0be881', '#0fbcf9', '#ffd32a', '#ff5e57', '#8854d0', '#ffa801'];
+            
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: -20,
+                    r: Math.random() * 6 + 4,
+                    dx: Math.random() * 6 - 3,
+                    dy: Math.random() * 5 + 3,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tilt: Math.random() * 10 - 5,
+                    tiltAngle: 0,
+                    tiltAngleIncremental: Math.random() * 0.08 + 0.04
+                });
+            }
+            if (particles.length === count) animateConfetti();
+        }
+
+        function animateConfetti() {
+            if (!particles.length) return;
+            requestAnimationFrame(animateConfetti);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach((p, i) => {
+                p.tiltAngle += p.tiltAngleIncremental;
+                p.y += p.dy;
+                p.x += Math.sin(p.tiltAngle) * 2 + p.dx;
+                p.tilt = Math.sin(p.tiltAngle) * 12;
+
+                ctx.beginPath();
+                ctx.fillStyle = p.color;
+                ctx.ellipse(p.x, p.y, p.r, p.r / 2 + Math.abs(p.tilt) / 4, p.tiltAngle, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (p.y > canvas.height + 20) {
+                    particles.splice(i, 1);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
